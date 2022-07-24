@@ -3,4 +3,3 @@ if(BUILD_TESTING)
 endif()
 
 add_subdirectory(Eigen3)
-add_subdirectory(olcPixelGameEngine)
