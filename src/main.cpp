@@ -53,21 +53,22 @@ std::vector<Eigen::MatrixXi> load_images(std::string path)
 	assert(num_of_images == 60000);
 	images.reserve(num_of_images);
 
-	for (int image_id = 0; image_id < num_of_images; image_id++) {
-		int rows = msb_to_int(items[8], items[9], items[10], items[11]);
-		assert(rows == 28);
+	int rows = msb_to_int(items[8], items[9], items[10], items[11]);
+	assert(rows == 28);
 
-		int cols = msb_to_int(items[12], items[13], items[14], items[15]);
-		assert(cols == 28);
+	int cols = msb_to_int(items[12], items[13], items[14], items[15]);
+	assert(cols == 28);
 
+	for (int k = 0; k < num_of_images; k++) {
 		Eigen::MatrixXi img(rows, cols);
+
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
-				img(i, j) = static_cast<int>(items[i*cols + j + 16]);
+				img(i, j) = static_cast<int>(items[k * rows * cols + i*cols + j + 16]);
 			}
 		}
+
 		images.push_back(img);
-		break;
 	}
 
 	return images;
@@ -80,6 +81,9 @@ int main()
 
 	std::cout << labels[0] << std::endl;
 	std::cout << images[0] << std::endl;
+
+	std::cout << labels[1] << std::endl;
+	std::cout << images[1] << std::endl;
 
 	return 0;
 }
