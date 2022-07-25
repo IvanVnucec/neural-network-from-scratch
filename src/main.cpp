@@ -4,67 +4,86 @@
 #include <fstream>
 #include <bitset>
 #include <cassert>
+#include <chrono>
 #include <Eigen/Dense>
 
-constexpr int msb_to_int(uint8_t a0, uint8_t a1, uint8_t a2, uint8_t a3)
+using namespace std::chrono;
+
+constexpr int msb_to_int(int a0, int a1, int a2, int a3)
 {
 	return (a0 << 24) | (a1 << 16) | (a2 << 8) | (a3 << 0);
 }
 
-std::vector<int> load_labels(std::string path)
+std::vector<uint8_t> load_labels(std::string path)
 {
-	std::vector<int> labels;
+	int a0, a1, a2, a3;
 
 	std::ifstream stream(path, std::ios::in | std::ios::binary);
 	assert(stream.good());
 
-	std::vector<uint8_t> items((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
-	assert(not items.empty());
-
-	int mag_num = msb_to_int(items[0], items[1], items[2], items[3]);
+	a0 = stream.get();
+	a1 = stream.get();
+	a2 = stream.get();
+	a3 = stream.get();
+	int mag_num = msb_to_int(a0, a1, a2, a3);
 	assert(mag_num == 2049);
 
-	int num_of_items = msb_to_int(items[4], items[5], items[6], items[7]);
+	a0 = stream.get();
+	a1 = stream.get();
+	a2 = stream.get();
+	a3 = stream.get();
+	int num_of_items = msb_to_int(a0, a1, a2, a3);
 	assert(num_of_items == 60000);
-
-	labels.reserve(num_of_items);
-
-	for (int i = 0; i < num_of_items; i++) {
-		labels.push_back(static_cast<int>(items[i+8]));
-	}
-
-	return labels;
+	
+	return std::vector<uint8_t>((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
 }
 
 std::vector<Eigen::MatrixXi> load_images(std::string path)
 {
+	int a0, a1, a2, a3;
 	std::vector<Eigen::MatrixXi> images;
 
 	std::ifstream stream(path, std::ios::in | std::ios::binary);
 	assert(stream.good());
 
-	std::vector<uint8_t> items((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
-	assert(not items.empty());
-
-	int mag_num = msb_to_int(items[0], items[1], items[2], items[3]);
+	a0 = stream.get();
+	a1 = stream.get();
+	a2 = stream.get();
+	a3 = stream.get();
+	int mag_num = msb_to_int(a0, a1, a2, a3);
 	assert(mag_num == 2051);
 
-	int num_of_images = msb_to_int(items[4], items[5], items[6], items[7]);
+	a0 = stream.get();
+	a1 = stream.get();
+	a2 = stream.get();
+	a3 = stream.get();
+	int num_of_images = msb_to_int(a0, a1, a2, a3);
 	assert(num_of_images == 60000);
 	images.reserve(num_of_images);
 
-	int rows = msb_to_int(items[8], items[9], items[10], items[11]);
+	a0 = stream.get();
+	a1 = stream.get();
+	a2 = stream.get();
+	a3 = stream.get();
+	int rows = msb_to_int(a0, a1, a2, a3);
 	assert(rows == 28);
 
-	int cols = msb_to_int(items[12], items[13], items[14], items[15]);
+	a0 = stream.get();
+	a1 = stream.get();
+	a2 = stream.get();
+	a3 = stream.get();
+	int cols = msb_to_int(a0, a1, a2, a3);
 	assert(cols == 28);
+	
+	std::vector<uint8_t> items((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+	assert(not items.empty());
 
 	for (int k = 0; k < num_of_images; k++) {
 		Eigen::MatrixXi img(rows, cols);
 
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
-				img(i, j) = static_cast<int>(items[k * rows * cols + i*cols + j + 16]);
+				img(i, j) = static_cast<int>(items[k * rows * cols + i*cols + j]);
 			}
 		}
 
@@ -76,14 +95,20 @@ std::vector<Eigen::MatrixXi> load_images(std::string path)
 
 int main()
 {
-	std::vector<int> labels = load_labels("dataset/train-labels.idx1-ubyte");
+	auto start = high_resolution_clock::now();
+
+	std::vector<uint8_t> labels = load_labels("dataset/train-labels.idx1-ubyte");
 	std::vector<Eigen::MatrixXi> images = load_images("dataset/train-images.idx3-ubyte");
 
-	std::cout << labels[0] << std::endl;
-	std::cout << images[0] << std::endl;
+	assert(labels[0] == 5);
+	assert(images[0](14, 14) == 240);
 
-	std::cout << labels[1] << std::endl;
-	std::cout << images[1] << std::endl;
+	assert(labels[1] == 0);
+	assert(images[1](5, 14) == 48);
+
+	auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<milliseconds>(stop - start);
+	std::cout << "Time taken by function: " << duration.count() << " ms" << std::endl;
 
 	return 0;
 }
