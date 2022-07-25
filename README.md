@@ -1,1 +1,1 @@
-# Star Tracker
+# Neural network from scratch
